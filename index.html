@@ -7,7 +7,7 @@
 <meta name="description" content="Xbox AutoPilot — панель диагностики и помощник Xbox Remote Play">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Xbox AutoPilot 3.3</title>
+<title>Xbox AutoPilot 3.4</title>
 <style>
 :root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -27,7 +27,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 </style>
 </head>
 <body><main class="wrap">
-<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.3 · IPHONE MODE</div></header>
+<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.4 · REMOTE PLAY</div></header>
 <h1>Диагностика Xbox</h1><p class="sub">Автоматическая проверка сети и честный статус Remote Play</p>
 <section class="card">
 <div class="row"><span class="eyebrow">Состояние системы</span><span class="pill" id="overall">ПРОВЕРКА…</span></div>
@@ -41,9 +41,12 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 </section>
 <section class="card">
 <div class="row"><span class="eyebrow">Твоя консоль</span><span class="pill">SERIES X</span></div>
-<div class="device"><div class="deviceicon">▣</div><div style="flex:1"><b>Xbox Series X</b><small>Официальный Remote Play</small></div><span class="status" id="connectionStatus">СТАТУС НЕИЗВЕСТЕН</span></div>
-<a class="btn primary" href="https://www.xbox.com/remoteplay" target="_blank" rel="noopener noreferrer">Открыть Xbox Remote Play ↗</a>
-<p class="tiny">После запуска Remote Play вернись в AutoPilot. Браузер не может автоматически подтвердить, что в другой вкладке началась трансляция.</p>
+<div class="device"><div class="deviceicon">▣</div><div style="flex:1"><b>Xbox Series X</b><small>Официальный Remote Play</small></div><span class="status" id="connectionStatus">ОЖИДАЕТ ПРОВЕРКИ</span></div>
+<a class="btn primary" id="openRemotePlay" href="https://www.xbox.com/remoteplay" target="_blank" rel="noopener noreferrer">Открыть Xbox Remote Play ↗</a>
+<p class="tiny">Войди в свой аккаунт Microsoft на официальной странице. Если Xbox подключится и ты увидишь изображение консоли, вернись сюда и подтверди это кнопкой ниже. AutoPilot не читает другую вкладку и не проверяет трансляцию самостоятельно.</p>
+<button class="btn secondary" id="confirmRemotePlay" type="button">✓ Я вижу изображение Xbox</button>
+<button class="btn secondary" id="resetRemotePlay" type="button" style="display:none">Сбросить подтверждение</button>
+<p class="tiny" id="remoteHelp">Пока нет подтверждения от пользователя.</p>
 </section>
 <div class="section"><h2>Установка на iPhone</h2><span>PWA</span></div>
 <section class="card"><p class="tiny">Чтобы добавить AutoPilot на главный экран, открой страницу в Safari, нажми «Поделиться», затем «На экран Домой» и подтверди добавление.</p><p class="tiny">Для полноценной установки PWA сайт должен быть размещён на HTTPS-хостинге. Открытие HTML-файла напрямую не включает Service Worker.</p></section>
@@ -68,6 +71,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 const $=id=>document.getElementById(id);
 function paint(dotId,statusId,state,text){const dot=$(dotId),label=$(statusId);dot.className='dot'+(state==='ok'?' ok':state==='bad'?' bad':'');label.textContent=text;label.className='status'+(state==='ok'?' ok':state==='bad'?' bad':'');}
 let checkInProgress=false;
+let userConfirmedRemotePlay=false;
 async function probeInternet(){
  if(!navigator.onLine){paint('internetDot','internetStatus','bad','Нет сети');return false;}
  const controller=new AbortController();let timeoutId;
@@ -82,8 +86,8 @@ async function runDiagnostics(){
   const online=await probeInternet();
   paint('siteDot','siteStatus','ok','Страница работает');
   paint('xboxDot','xboxStatus','unknown','Браузер не может обнаружить Xbox');
-  paint('remoteDot','remoteStatus','unknown','Нет официального сигнала');
-  $('connectionStatus').textContent='СТАТУС НЕ ПОДТВЕРЖДЁН';
+  paint('remoteDot','remoteStatus',userConfirmedRemotePlay?'ok':'unknown',userConfirmedRemotePlay?'Подтверждено тобой':'Ожидает подтверждения');
+  $('connectionStatus').textContent=userConfirmedRemotePlay?'ПОДТВЕРЖДЕНО ТОБОЙ':'ОЖИДАЕТ ПРОВЕРКИ';
   $('overall').textContent=online?'ИНТЕРНЕТ ДОСТУПЕН':'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';
   $('checkedAt').textContent='Последняя проверка: '+new Date().toLocaleTimeString('ru-RU')+' · Автопроверка каждые 30 секунд';
   $('log').textContent=online
@@ -95,6 +99,24 @@ async function runDiagnostics(){
   $('log').textContent='Ошибка диагностики: '+(e.message||'неизвестная ошибка');
  }finally{checkInProgress=false;}
 }
+$('confirmRemotePlay').addEventListener('click',()=>{
+ userConfirmedRemotePlay=true;
+ paint('remoteDot','remoteStatus','ok','Подтверждено тобой');
+ $('connectionStatus').textContent='ПОДТВЕРЖДЕНО ТОБОЙ';
+ $('remoteHelp').textContent='Ты подтвердил, что видишь изображение Xbox. Это ручное подтверждение, не автоматическая проверка браузера.';
+ $('confirmRemotePlay').style.display='none';
+ $('resetRemotePlay').style.display='block';
+ $('log').textContent='Пользователь подтвердил, что видит изображение Xbox в Remote Play.';
+});
+$('resetRemotePlay').addEventListener('click',()=>{
+ userConfirmedRemotePlay=false;
+ paint('remoteDot','remoteStatus','unknown','Ожидает подтверждения');
+ $('connectionStatus').textContent='ОЖИДАЕТ ПРОВЕРКИ';
+ $('remoteHelp').textContent='Подтверждение сброшено. Сначала открой Remote Play и проверь изображение.';
+ $('confirmRemotePlay').style.display='block';
+ $('resetRemotePlay').style.display='none';
+ $('log').textContent='Ручное подтверждение Remote Play сброшено.';
+});
 $('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 const data={
