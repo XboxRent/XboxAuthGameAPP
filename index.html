@@ -37,7 +37,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <div class="metric"><span><i class="dot" id="remoteDot"></i>Сеанс Remote Play</span><strong class="status" id="remoteStatus">Нет сигнала</strong></div>
 <p class="tiny" id="checkedAt">Автоматическая проверка запускается…</p>
 <button class="btn secondary" id="checkNow" type="button">↻ Проверить сейчас</button>
-<div class="notice">Ограничение iPhone: Safari не может читать состояние другой вкладки Remote Play или сканировать локальную сеть как системное приложение. Статус Xbox и активного сеанса не будет выдаваться за подтверждённый без официального сигнала.</div>
+<div class="notice">Для поиска Xbox установи локальный компонент на компьютере в этой же сети и открой AutoPilot по его локальному адресу. Инструкция: <a href="./companion/README.md" style="color:#f0d995">companion/README.md</a>. GitHub Pages не может напрямую сканировать локальную сеть. Статус активного Remote Play остаётся неподтверждённым: браузер не получает официальный сигнал из другой вкладки.</div>
 </section>
 <section class="card">
 <div class="row"><span class="eyebrow">Твоя консоль</span><span class="pill">SERIES X</span></div>
@@ -75,9 +75,37 @@ async function probeInternet(){
  catch(e){paint('internetDot','internetStatus','bad','Нет ответа');return false;}finally{if(timeoutId)clearTimeout(timeoutId);}
 }
 async function runDiagnostics(){
- if(checkInProgress)return;checkInProgress=true;$('overall').textContent='ПРОВЕРКА…';$('checkedAt').textContent='Проверяем интернет-соединение…';
- try{const online=await probeInternet();paint('siteDot','siteStatus','ok','Страница работает');paint('xboxDot','xboxStatus','unknown','Safari не может проверить');paint('remoteDot','remoteStatus','unknown','Нет сигнала от Xbox');$('connectionStatus').textContent='СТАТУС НЕИЗВЕСТЕН';$('overall').textContent=online?'СЕТЬ ДОСТУПНА':'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';$('checkedAt').textContent='Последняя проверка: '+new Date().toLocaleTimeString('ru-RU')+' · Автопроверка каждые 30 секунд';$('log').textContent=online?'Интернет отвечает. Состояние Xbox и Remote Play из Safari определить нельзя.':'Не удалось подтвердить интернет. Возможно, сеть ограничивает проверочный запрос.';}
- catch(e){$('overall').textContent='ПРОВЕРКА НЕ УДАЛАСЬ';$('checkedAt').textContent='Проверка завершилась с ошибкой. Попробуй ещё раз.';$('log').textContent='Ошибка диагностики.';}finally{checkInProgress=false;}
+ if(checkInProgress)return;checkInProgress=true;$('overall').textContent='ПРОВЕРКА…';$('checkedAt').textContent='Проверяем интернет и локальный компонент…';
+ try{
+  const online=await probeInternet();
+  paint('siteDot','siteStatus','ok','Страница работает');
+  let helper=false, discovery=null, remoteMessage='Нельзя подтвердить из браузера';
+  try{
+   const response=await fetch('/api/probe',{cache:'no-store',headers:{'Accept':'application/json'}});
+   const type=response.headers.get('content-type')||'';
+   if(response.ok&&type.includes('application/json')){
+    const data=await response.json();
+    if(data.helper==='ready'&&data.discovery){helper=true;discovery=data.discovery;}
+   }
+  }catch(e){}
+  if(helper&&discovery.state==='found'){
+   paint('xboxDot','xboxStatus','ok','Объявление Xbox найдено');
+   $('log').textContent='Локальный компонент обнаружил Xbox/Microsoft по UPnP. Это подтверждает сетевое объявление, но не готовность Remote Play.';
+  }else if(helper&&discovery.state==='not_found'){
+   paint('xboxDot','xboxStatus','unknown','Xbox не обнаружен по UPnP');
+   $('log').textContent='Локальный компонент работает, но объявление Xbox не найдено. Проверь одну Wi‑Fi сеть и настройки UPnP.';
+  }else{
+   paint('xboxDot','xboxStatus','unknown','Нужен локальный компонент');
+   $('log').textContent='Для обнаружения Xbox открой эту страницу с компьютера, на котором запущен companion/server.py. Инструкция: companion/README.md.';
+  }
+  paint('remoteDot','remoteStatus','unknown',remoteMessage);
+  $('connectionStatus').textContent='НЕ ПОДТВЕРЖДЁН';
+  $('overall').textContent=online?(helper?'ЛОКАЛЬНАЯ ПРОВЕРКА ГОТОВА':'ИНТЕРНЕТ ДОСТУПЕН'):'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';
+  $('checkedAt').textContent='Последняя проверка: '+new Date().toLocaleTimeString('ru-RU')+' · Автопроверка каждые 30 секунд';
+  if(helper&&discovery.errors&&discovery.errors.length)$('log').textContent+=' Ошибка сети: '+discovery.errors[0];
+ }catch(e){
+  $('overall').textContent='ПРОВЕРКА НЕ УДАЛАСЬ';$('checkedAt').textContent='Проверка завершилась с ошибкой. Попробуй ещё раз.';$('log').textContent='Ошибка диагностики: '+(e.message||'неизвестная ошибка');
+ }finally{checkInProgress=false;}
 }
 $('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
