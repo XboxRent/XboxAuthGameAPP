@@ -80,6 +80,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
     <button class="action stop" id="stopScenario">■ Остановить</button>
   </div>
   <button class="btn secondary" id="testButtons" type="button">Тест: вправо и влево</button>
+  <button class="btn secondary" id="disconnectXbox" type="button">Отключить XRemote</button>
   <p class="tiny" id="runHelp">Сценарий выполняется на сервере через XRemote. Для остановки нажми «Остановить». Кнопки A/B могут подтверждать действия в интерфейсе Xbox — используй их только когда понимаешь текущий экран.</p>
   <div class="log" id="automationLog" aria-live="polite">Ожидание подключения.</div>
 </section>
@@ -187,6 +188,10 @@ renderSteps();
 
 // XRemote VPS automation bridge. The Xbox OAuth token stays on the server.
 const automationSteps = [];
+try {
+  const saved = JSON.parse(localStorage.getItem('xremoteScenario') || '[]');
+  if (Array.isArray(saved)) automationSteps.push(...saved.slice(0,80));
+} catch {}
 const apiUrlEl = $('apiUrl'), apiKeyEl = $('apiKey');
 apiUrlEl.value = localStorage.getItem('xremoteApiUrl') || '';
 apiKeyEl.value = sessionStorage.getItem('xremoteApiKey') || '';
@@ -212,7 +217,7 @@ function renderAutomationSteps() {
     ? automationSteps.map((step,i)=>'<div class="stepitem"><span>'+(i+1)+'. '+step.button+' · '+step.holdMs+' мс · пауза '+step.waitMs+' мс</span><button type="button" data-remove="'+i+'" aria-label="Удалить шаг">×</button></div>').join('')
     : '<p class="tiny">Сценарий пока пуст. Добавь последовательность кнопок.</p>';
   $('scriptSteps').querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => {
-    automationSteps.splice(Number(button.dataset.remove),1); renderAutomationSteps();
+    automationSteps.splice(Number(button.dataset.remove),1); localStorage.setItem('xremoteScenario',JSON.stringify(automationSteps)); renderAutomationSteps();
   }));
 }
 $('addStep').addEventListener('click', () => {
@@ -221,7 +226,7 @@ $('addStep').addEventListener('click', () => {
     automationLog('Проверь длительность нажатия и паузы.'); return;
   }
   if (automationSteps.length>=80) { automationLog('Максимум 80 шагов.'); return; }
-  automationSteps.push({button:$('buttonName').value,holdMs,waitMs}); renderAutomationSteps();
+  automationSteps.push({button:$('buttonName').value,holdMs,waitMs}); localStorage.setItem('xremoteScenario',JSON.stringify(automationSteps)); renderAutomationSteps();
 });
 $('connectXbox').addEventListener('click', async () => {
   $('connectXbox').disabled=true;
@@ -248,6 +253,10 @@ $('stopScenario').addEventListener('click', async () => {
 });
 $('testButtons').addEventListener('click', async () => {
   try { const result=await apiRequest('/api/test-presses','POST',{}); automationLog('Тестовые кнопки отправлены: '+(result.result?.sent||[]).join(', ')); }
+  catch(e) { automationLog(e.message); }
+});
+$('disconnectXbox').addEventListener('click', async () => {
+  try { await apiRequest('/api/disconnect','POST',{}); $('apiState').textContent='ОТКЛЮЧЁН'; automationLog('XRemote-сессия остановлена.'); }
   catch(e) { automationLog(e.message); }
 });
 renderAutomationSteps();
