@@ -7,7 +7,7 @@
 <meta name="description" content="Xbox AutoPilot — панель диагностики и помощник Xbox Remote Play">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Xbox AutoPilot 3.5</title>
+<title>Xbox AutoPilot 3.6</title>
 <style>
 :root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -27,11 +27,12 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 </style>
 </head>
 <body><main class="wrap">
-<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.5 · GUIDED PLAY</div></header>
+<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.6 · GAMEPAD CHECK</div></header>
 <h1>Диагностика Xbox</h1><p class="sub">Автоматическая проверка сети и честный статус Remote Play</p>
 <section class="card">
 <div class="row"><span class="eyebrow">Состояние системы</span><span class="pill" id="overall">ПРОВЕРКА…</span></div>
 <div class="metric"><span><i class="dot" id="internetDot"></i>Интернет на iPhone</span><strong class="status" id="internetStatus">Проверка…</strong></div>
+<div class="metric"><span><i class="dot" id="gamepadDot"></i>Геймпад на этом устройстве</span><strong class="status" id="gamepadStatus">Проверка…</strong></div>
 <div class="metric"><span><i class="dot" id="siteDot"></i>Сервис проверки</span><strong class="status" id="siteStatus">Проверка…</strong></div>
 <div class="metric"><span><i class="dot" id="xboxDot"></i>Xbox в локальной сети</span><strong class="status" id="xboxStatus">Не проверяется браузером</strong></div>
 <div class="metric"><span><i class="dot" id="remoteDot"></i>Сеанс Remote Play</span><strong class="status" id="remoteStatus">Нет сигнала</strong></div>
@@ -52,11 +53,11 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <section class="card"><p class="tiny">Чтобы добавить AutoPilot на главный экран, открой страницу в Safari, нажми «Поделиться», затем «На экран Домой» и подтверди добавление.</p><p class="tiny">Для полноценной установки PWA сайт должен быть размещён на HTTPS-хостинге. Открытие HTML-файла напрямую не включает Service Worker.</p></section>
 <div class="section"><h2>Проверка Safari</h2><span>iOS / WEBRTC</span></div>
 <section class="card"><p class="tiny">Перед экспериментом с прямым подключением Xbox проверь возможности WebRTC и видеопотока в Safari на этом iPhone.</p><a class="btn secondary" href="./xremote-test.html">Открыть диагностику Safari ↗</a></section>
-<div class="section"><h2>Сценарии AutoPilot</h2><span>ПЛАНИРОВЩИК</span></div>
+<div class="section"><h2>Ручные подсказки</h2><span>НЕ АВТОУПРАВЛЕНИЕ</span></div>
 <div class="grid" id="presets">
-<button class="preset active" data-id="home"><div class="ico">⌂</div><b>Главный экран</b><small>План перехода на домашнюю панель</small><span class="tag">БАЗОВЫЙ</span></button>
-<button class="preset" data-id="store"><div class="ico">▤</div><b>Microsoft Store</b><small>План открытия магазина</small><span class="tag">МЕНЮ</span></button>
-<button class="preset" data-id="library"><div class="ico">▦</div><b>Библиотека</b><small>План открытия библиотеки</small><span class="tag">МЕНЮ</span></button>
+<button class="preset active" data-id="home"><div class="ico">⌂</div><b>Главный экран</b><small>Ручной переход на домашнюю панель</small><span class="tag">БАЗОВЫЙ</span></button>
+<button class="preset" data-id="store"><div class="ico">▤</div><b>Microsoft Store</b><small>Ручное открытие магазина</small><span class="tag">МЕНЮ</span></button>
+<button class="preset" data-id="library"><div class="ico">▦</div><b>Библиотека</b><small>Ручное открытие библиотеки</small><span class="tag">МЕНЮ</span></button>
 <button class="preset" data-id="settings"><div class="ico">⚙</div><b>Настройки</b><small>План перехода к настройкам</small><span class="tag">СИСТЕМА</span></button>
 </div>
 <section class="card">
@@ -65,7 +66,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <ol class="steps" id="steps"><li><span class="n">1</span>Открыть Remote Play</li><li><span class="n">2</span>Выполнить переход в интерфейсе Xbox</li><li><span class="n">3</span>Вернуться сюда для отметки выполнения</li></ol>
 <div class="metric"><span>Прогресс сценария</span><strong id="progress">0 / 3 шагов</strong></div>
 <div class="actions"><button class="action go" id="nextStep">✓ Отметить шаг</button><button class="action stop" id="resetSteps">↺ Сначала</button></div>
-<p class="tiny" id="stepHelp">Выполни первый шаг в Remote Play, затем нажми «Отметить шаг». AutoPilot не отправляет команды на консоль.</p>
+<p class="tiny" id="stepHelp">Выполни первый шаг в Remote Play, затем нажми «Отметить шаг». Подсказки не отправляют команды на консоль. Геймпад здесь проверяется только на этом устройстве, не на Xbox.</p>
 </section>
 <section class="card"><div class="eyebrow" style="margin-bottom:10px">Журнал состояния</div><div class="log" id="log">Автоматическая диагностика запущена.</div></section>
 <p class="foot">Независимый проект · Не связан с Microsoft · Не запрашивает и не хранит пароль Microsoft</p>
@@ -75,6 +76,11 @@ const $=id=>document.getElementById(id);
 function paint(dotId,statusId,state,text){const dot=$(dotId),label=$(statusId);dot.className='dot'+(state==='ok'?' ok':state==='bad'?' bad':'');label.textContent=text;label.className='status'+(state==='ok'?' ok':state==='bad'?' bad':'');}
 let checkInProgress=false;
 let userConfirmedRemotePlay=false;
+function updateGamepadStatus(){
+ const pads=typeof navigator.getGamepads==='function'?Array.from(navigator.getGamepads()).filter(p=>p&&p.connected):[];
+ const names=pads.map(p=>p.id||'Геймпад').slice(0,2);
+ paint('gamepadDot','gamepadStatus',pads.length?'ok':'unknown',pads.length?names.join(', '):'Не подключён');
+}
 async function probeInternet(){
  if(!navigator.onLine){paint('internetDot','internetStatus','bad','Нет сети');return false;}
  const controller=new AbortController();let timeoutId;
@@ -82,6 +88,7 @@ async function probeInternet(){
  catch(e){paint('internetDot','internetStatus','bad','Нет ответа');return false;}finally{if(timeoutId)clearTimeout(timeoutId);}
 }
 async function runDiagnostics(){
+ updateGamepadStatus();
  if(checkInProgress)return;checkInProgress=true;
  $('overall').textContent='ПРОВЕРКА…';
  $('checkedAt').textContent='Проверяем интернет на iPhone…';
@@ -120,7 +127,8 @@ $('resetRemotePlay').addEventListener('click',()=>{
  $('resetRemotePlay').style.display='none';
  $('log').textContent='Ручное подтверждение Remote Play сброшено.';
 });
-$('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
+window.addEventListener('gamepadconnected',updateGamepadStatus);window.addEventListener('gamepaddisconnected',updateGamepadStatus);
+$('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);setInterval(updateGamepadStatus,1000);
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 const data={
 home:{name:'Главный экран',desc:'Пошаговый переход на домашнюю панель',steps:['Открой Xbox Remote Play и дождись изображения консоли','Через экран Remote Play перейди на главный экран Xbox','Убедись, что отображается домашняя панель']},
