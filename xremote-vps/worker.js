@@ -1,4 +1,5 @@
 import { Client, Buttons } from '@yowari/xremote';
+import { runTwoTapTest } from './button-test.js';
 
 const stateEl = document.querySelector('#state');
 const logEl = document.querySelector('#log');
@@ -25,18 +26,10 @@ async function connect({ oauthToken, serverId }) {
   status('Xbox stream connected', { connected: true });
   return { connected: true, consoleName: selected.name || 'Xbox console' };
 }
-async function tap(button) {
-  if (!gamepad || !streamStarted) throw new Error('Xbox stream is not connected');
-  gamepad.pressButton(0, button);
-  await new Promise(resolve => setTimeout(resolve, 180));
-  gamepad.releaseButton(0, button);
-  await new Promise(resolve => setTimeout(resolve, 350));
-}
 async function testPresses() {
-  // Harmless navigation-only inputs; no confirm/purchase button.
-  await tap(Buttons.DpadRight);
-  await tap(Buttons.DpadLeft);
-  return { sent: ['DpadRight', 'DpadLeft'], durationMs: 710, note: 'Both buttons released after each tap' };
+  if (!gamepad || !streamStarted) throw new Error('Xbox stream is not connected');
+  // Navigation-only inputs; no confirm/purchase button.
+  return runTwoTapTest(gamepad, Buttons);
 }
 async function disconnect() {
   try { if (gamepad) { for (const b of [Buttons.DpadRight, Buttons.DpadLeft, Buttons.A, Buttons.B, Buttons.Nexus, Buttons.Menu, Buttons.View]) gamepad.releaseButton(0, b); } }
