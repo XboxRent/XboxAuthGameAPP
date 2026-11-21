@@ -5,6 +5,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
@@ -83,4 +84,21 @@ wss.on('connection', ws => {
   });
   ws.on('close', () => { if (worker === ws) { worker = null; workerReady = false; xboxConnected = false; lastEvent = 'Browser worker disconnected'; for (const [id,p] of pending) { p.reject(new Error('Worker disconnected')); pending.delete(id); } } });
 });
-server.listen(PORT, '0.0.0.0', () => console.log(`XRemote API listening on :${PORT}`));
+server.listen(PORT, '0.0.0.0', async () => {
+  console.log(`XRemote API listening on :${PORT}`);
+  try {
+    const browser = await chromium.launch({
+      headless: process.env.BROWSER_HEADLESS !== 'false',
+      args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required']
+    });
+    const page = await browser.newPage();
+    page.on('console', message => { if (message.type() === 'error') console.error('[worker browser]', message.text()); });
+    page.on('pageerror', error => { lastError = error.message; console.error('[worker browser]', error); });
+    await page.goto(`http://127.0.0.1:${PORT}/worker`, { waitUntil: 'domcontentloaded' });
+    console.log('Managed Chromium worker page launched');
+    page.on('close', () => { workerReady = false; xboxConnected = false; lastEvent = 'Worker browser page closed'; });
+  } catch (error) {
+    lastError = 'Could not launch managed Chromium: ' + error.message;
+    console.error(lastError);
+  }
+});
