@@ -24,7 +24,7 @@ cp .env.example .env
 # Configure XREMOTE_OAUTH_TOKEN via a trusted method.
 docker compose up -d --build
 ```
-Open `http://127.0.0.1:3000/worker` from Chromium running on the VPS. Keep that browser context alive. Put a TLS reverse proxy in front of the API only; keep `/worker` and `/worker-socket` inaccessible from the public internet.
+The browser worker starts automatically with the container. Put a TLS reverse proxy in front of the API only; keep `/worker` and `/worker-socket` inaccessible from the public internet.
 
 ## API
 All /api routes require `Authorization: Bearer <API_KEY>`.
