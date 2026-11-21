@@ -7,7 +7,7 @@
 <meta name="description" content="Xbox AutoPilot — панель диагностики и помощник Xbox Remote Play">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Xbox AutoPilot 3.4</title>
+<title>Xbox AutoPilot 3.5</title>
 <style>
 :root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -27,7 +27,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 </style>
 </head>
 <body><main class="wrap">
-<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.4 · REMOTE PLAY</div></header>
+<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.5 · GUIDED PLAY</div></header>
 <h1>Диагностика Xbox</h1><p class="sub">Автоматическая проверка сети и честный статус Remote Play</p>
 <section class="card">
 <div class="row"><span class="eyebrow">Состояние системы</span><span class="pill" id="overall">ПРОВЕРКА…</span></div>
@@ -61,8 +61,9 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <div class="row"><span class="eyebrow">Выбранный сценарий</span><span class="ver" id="state">ГОТОВ</span></div>
 <h3 id="name" style="margin:12px 0 4px;font-size:15px">Главный экран</h3><div id="desc" style="color:var(--muted);font-size:11px">План последовательности действий</div>
 <ol class="steps" id="steps"><li><span class="n">1</span>Открыть Remote Play</li><li><span class="n">2</span>Выполнить переход в интерфейсе Xbox</li><li><span class="n">3</span>Вернуться сюда для отметки выполнения</li></ol>
-<div class="actions"><button class="action go" id="start">▶ Запустить демо</button><button class="action stop" id="stop" disabled>■ Стоп</button></div>
-<p class="tiny">Демо показывает план шагов. Оно не нажимает кнопки на консоли.</p>
+<div class="metric"><span>Прогресс сценария</span><strong id="progress">0 / 3 шагов</strong></div>
+<div class="actions"><button class="action go" id="nextStep">✓ Отметить шаг</button><button class="action stop" id="resetSteps">↺ Сначала</button></div>
+<p class="tiny" id="stepHelp">Выполни первый шаг в Remote Play, затем нажми «Отметить шаг». AutoPilot не отправляет команды на консоль.</p>
 </section>
 <section class="card"><div class="eyebrow" style="margin-bottom:10px">Журнал состояния</div><div class="log" id="log">Автоматическая диагностика запущена.</div></section>
 <p class="foot">Независимый проект · Не связан с Microsoft · Не запрашивает и не хранит пароль Microsoft</p>
@@ -120,15 +121,24 @@ $('resetRemotePlay').addEventListener('click',()=>{
 $('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 const data={
-home:{name:'Главный экран',desc:'План перехода на домашнюю панель',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox перейти на главный экран','Отметить выполнение здесь']},
-store:{name:'Microsoft Store',desc:'План открытия магазина',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox выбрать Microsoft Store','Отметить выполнение здесь']},
-library:{name:'Библиотека',desc:'План открытия библиотеки',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox открыть библиотеку','Отметить выполнение здесь']},
-settings:{name:'Настройки',desc:'План перехода к системным настройкам',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox открыть настройки','Отметить выполнение здесь']}
+home:{name:'Главный экран',desc:'Пошаговый переход на домашнюю панель',steps:['Открой Xbox Remote Play и дождись изображения консоли','Через экран Remote Play перейди на главный экран Xbox','Убедись, что отображается домашняя панель']},
+store:{name:'Microsoft Store',desc:'Пошаговое открытие магазина',steps:['Убедись, что изображение Xbox видно в Remote Play','Через экран Remote Play выбери Microsoft Store','Дождись открытия магазина']},
+library:{name:'Библиотека',desc:'Пошаговое открытие библиотеки',steps:['Убедись, что изображение Xbox видно в Remote Play','Через экран Remote Play открой раздел «Мои игры и приложения»','Перейди в библиотеку игр']},
+settings:{name:'Настройки',desc:'Пошаговый переход к системным настройкам',steps:['Убедись, что изображение Xbox видно в Remote Play','Через экран Remote Play открой настройки профиля/системы','Проверь, что открылся нужный раздел настроек']}
 };
-let selected='home',timer=null,i=0;
-function choose(id){if(timer)return;selected=id;document.querySelectorAll('.preset').forEach(x=>x.classList.toggle('active',x.dataset.id===id));$('name').textContent=data[id].name;$('desc').textContent=data[id].desc;$('steps').innerHTML=data[id].steps.map((s,j)=>'<li><span class="n">'+(j+1)+'</span>'+s+'</li>').join('');$('state').textContent='ГОТОВ';$('log').textContent='Выбран сценарий: '+data[id].name;}
+let selected='home',stepIndex=0;
+function renderSteps(){
+ const d=data[selected];
+ $('steps').innerHTML=d.steps.map((s,j)=>'<li><span class="n">'+(j<stepIndex?'✓':(j+1))+'</span>'+s+(j<stepIndex?' <b style="color:var(--green)">· ГОТОВО</b>':'')+'</li>').join('');
+ $('progress').textContent=stepIndex+' / '+d.steps.length+' шагов';
+ $('state').textContent=stepIndex===d.steps.length?'ЗАВЕРШЕНО':(stepIndex?'В ПРОЦЕССЕ':'ГОТОВ');
+ $('nextStep').disabled=stepIndex>=d.steps.length;
+ $('stepHelp').textContent=stepIndex>=d.steps.length?'Сценарий завершён. Команды на Xbox не отправлялись.': 'Выполни шаг '+(stepIndex+1)+' в Remote Play, затем отметь его здесь.';
+}
+function choose(id){selected=id;stepIndex=0;document.querySelectorAll('.preset').forEach(x=>x.classList.toggle('active',x.dataset.id===id));$('name').textContent=data[id].name;$('desc').textContent=data[id].desc;$('log').textContent='Выбран сценарий: '+data[id].name;renderSteps();}
 document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.id)));
-$('start').onclick=()=>{if(timer)return;i=0;$('start').disabled=true;$('stop').disabled=false;$('state').textContent='ДЕМО';$('log').textContent='Демонстрация шагов запущена.';const run=()=>{if(i>=data[selected].steps.length){clearInterval(timer);timer=null;$('start').disabled=false;$('stop').disabled=true;$('state').textContent='ГОТОВ';$('log').textContent='Демо завершено. Команды на Xbox не отправлялись.';return;}$('log').textContent='Шаг '+(i+1)+': '+data[selected].steps[i];i++;};run();timer=setInterval(run,1400);};
-$('stop').onclick=()=>{if(timer)clearInterval(timer);timer=null;$('start').disabled=false;$('stop').disabled=true;$('state').textContent='ОСТАНОВЛЕНО';$('log').textContent='Демо остановлено.';};
+$('nextStep').onclick=()=>{if(stepIndex>=data[selected].steps.length)return;stepIndex++;renderSteps();$('log').textContent=stepIndex>=data[selected].steps.length?'Сценарий завершён: '+data[selected].name:'Отмечен шаг '+stepIndex+': '+data[selected].name;};
+$('resetSteps').onclick=()=>{stepIndex=0;renderSteps();$('log').textContent='Прогресс сценария сброшен.';};
+renderSteps();
 </script>
 </body></html>
