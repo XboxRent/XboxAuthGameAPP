@@ -1,0 +1,2 @@
+import { defineConfig } from 'vite';
+export default defineConfig({ build: { rollupOptions: { input: { worker: 'worker.html' }, output: { entryFileNames: 'worker.js', chunkFileNames: 'assets/[name]-[hash].js', assetFileNames: 'assets/[name]-[hash][extname]' } }, outDir: 'dist', emptyOutDir: true } });
