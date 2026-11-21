@@ -7,7 +7,7 @@
 <meta name="description" content="Xbox AutoPilot — панель диагностики и помощник Xbox Remote Play">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Xbox AutoPilot 3.2</title>
+<title>Xbox AutoPilot 3.3</title>
 <style>
 :root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -27,7 +27,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 </style>
 </head>
 <body><main class="wrap">
-<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.2 · AUTO CHECK</div></header>
+<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.3 · IPHONE MODE</div></header>
 <h1>Диагностика Xbox</h1><p class="sub">Автоматическая проверка сети и честный статус Remote Play</p>
 <section class="card">
 <div class="row"><span class="eyebrow">Состояние системы</span><span class="pill" id="overall">ПРОВЕРКА…</span></div>
@@ -37,7 +37,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <div class="metric"><span><i class="dot" id="remoteDot"></i>Сеанс Remote Play</span><strong class="status" id="remoteStatus">Нет сигнала</strong></div>
 <p class="tiny" id="checkedAt">Автоматическая проверка запускается…</p>
 <button class="btn secondary" id="checkNow" type="button">↻ Проверить сейчас</button>
-<div class="notice">Для поиска Xbox установи локальный компонент на компьютере в этой же сети и открой AutoPilot по его локальному адресу. Инструкция: <a href="./companion/README.md" style="color:#f0d995">companion/README.md</a>. GitHub Pages не может напрямую сканировать локальную сеть. Статус активного Remote Play остаётся неподтверждённым: браузер не получает официальный сигнал из другой вкладки.</div>
+<div class="notice">Режим iPhone без компьютера: AutoPilot проверяет интернет и доступность этой страницы. Safari не предоставляет веб-странице надёжный способ сканировать локальную сеть или читать состояние другой вкладки. Поэтому обнаружение Xbox и активный сеанс Remote Play показываются как неподтверждённые, а не имитируются.</div>
 </section>
 <section class="card">
 <div class="row"><span class="eyebrow">Твоя консоль</span><span class="pill">SERIES X</span></div>
@@ -75,36 +75,24 @@ async function probeInternet(){
  catch(e){paint('internetDot','internetStatus','bad','Нет ответа');return false;}finally{if(timeoutId)clearTimeout(timeoutId);}
 }
 async function runDiagnostics(){
- if(checkInProgress)return;checkInProgress=true;$('overall').textContent='ПРОВЕРКА…';$('checkedAt').textContent='Проверяем интернет и локальный компонент…';
+ if(checkInProgress)return;checkInProgress=true;
+ $('overall').textContent='ПРОВЕРКА…';
+ $('checkedAt').textContent='Проверяем интернет на iPhone…';
  try{
   const online=await probeInternet();
   paint('siteDot','siteStatus','ok','Страница работает');
-  let helper=false, discovery=null, remoteMessage='Нельзя подтвердить из браузера';
-  try{
-   const response=await fetch('/api/probe',{cache:'no-store',headers:{'Accept':'application/json'}});
-   const type=response.headers.get('content-type')||'';
-   if(response.ok&&type.includes('application/json')){
-    const data=await response.json();
-    if(data.helper==='ready'&&data.discovery){helper=true;discovery=data.discovery;}
-   }
-  }catch(e){}
-  if(helper&&discovery.state==='found'){
-   paint('xboxDot','xboxStatus','ok','Объявление Xbox найдено');
-   $('log').textContent='Локальный компонент обнаружил Xbox/Microsoft по UPnP. Это подтверждает сетевое объявление, но не готовность Remote Play.';
-  }else if(helper&&discovery.state==='not_found'){
-   paint('xboxDot','xboxStatus','unknown','Xbox не обнаружен по UPnP');
-   $('log').textContent='Локальный компонент работает, но объявление Xbox не найдено. Проверь одну Wi‑Fi сеть и настройки UPnP.';
-  }else{
-   paint('xboxDot','xboxStatus','unknown','Нужен локальный компонент');
-   $('log').textContent='Для обнаружения Xbox открой эту страницу с компьютера, на котором запущен companion/server.py. Инструкция: companion/README.md.';
-  }
-  paint('remoteDot','remoteStatus','unknown',remoteMessage);
-  $('connectionStatus').textContent='НЕ ПОДТВЕРЖДЁН';
-  $('overall').textContent=online?(helper?'ЛОКАЛЬНАЯ ПРОВЕРКА ГОТОВА':'ИНТЕРНЕТ ДОСТУПЕН'):'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';
+  paint('xboxDot','xboxStatus','unknown','Браузер не может обнаружить Xbox');
+  paint('remoteDot','remoteStatus','unknown','Нет официального сигнала');
+  $('connectionStatus').textContent='СТАТУС НЕ ПОДТВЕРЖДЁН';
+  $('overall').textContent=online?'ИНТЕРНЕТ ДОСТУПЕН':'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';
   $('checkedAt').textContent='Последняя проверка: '+new Date().toLocaleTimeString('ru-RU')+' · Автопроверка каждые 30 секунд';
-  if(helper&&discovery.errors&&discovery.errors.length)$('log').textContent+=' Ошибка сети: '+discovery.errors[0];
+  $('log').textContent=online
+   ?'Интернет на iPhone доступен. Прямое обнаружение Xbox и состояние Remote Play недоступны обычной веб-странице в Safari.'
+   :'Не удалось подтвердить доступ к проверочному серверу. Проверь подключение iPhone к интернету.';
  }catch(e){
-  $('overall').textContent='ПРОВЕРКА НЕ УДАЛАСЬ';$('checkedAt').textContent='Проверка завершилась с ошибкой. Попробуй ещё раз.';$('log').textContent='Ошибка диагностики: '+(e.message||'неизвестная ошибка');
+  $('overall').textContent='ПРОВЕРКА НЕ УДАЛАСЬ';
+  $('checkedAt').textContent='Проверка завершилась с ошибкой. Попробуй ещё раз.';
+  $('log').textContent='Ошибка диагностики: '+(e.message||'неизвестная ошибка');
  }finally{checkInProgress=false;}
 }
 $('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
