@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d0a">
+<meta name="description" content="Проверка возможностей Safari для будущего подключения Xbox AutoPilot">
+<title>Xbox AutoPilot — диагностика Safari</title>
+<style>
+:root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:600px;margin:auto;padding:20px 16px calc(34px + env(safe-area-inset-bottom))}
+header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px}header{margin-bottom:22px}.brand{font-size:18px;font-weight:850}.ver,.pill{font-size:10px;color:var(--green);border:1px solid #31533b;padding:5px 9px;border-radius:20px}
+h1{font-size:28px;line-height:1.12;letter-spacing:-.8px;margin:0 0 8px}.sub{font-size:13px;color:var(--muted);margin:0 0 18px}
+.card{background:linear-gradient(145deg,#151f18,#101611);border:1px solid var(--line);border-radius:18px;padding:16px;margin:13px 0}
+.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:850}
+.metric{padding:12px 0;border-top:1px solid #26342a;font-size:12px}.metric:first-of-type{border-top:0}.metric strong{font-size:11px;text-align:right;max-width:55%}
+.status{font-size:11px;font-weight:800;color:var(--amber)}.status.ok{color:var(--green)}.status.bad{color:var(--red)}
+.btn{display:block;width:100%;border:0;border-radius:13px;padding:14px 12px;font-size:13px;font-weight:850;margin-top:12px;cursor:pointer;text-decoration:none;text-align:center}
+.primary{background:linear-gradient(135deg,#9af0a6,#39b85b);color:#07120a}.secondary{background:#242d27;color:#e7eee8;border:1px solid #3a473d}
+.tiny{font-size:10px;color:var(--muted);line-height:1.55}.notice{padding:12px;border:1px solid #5c4a27;background:#282213;border-radius:11px;color:#e8d49c;font-size:11px;margin-top:12px}
+.log{font-size:11px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;min-height:24px}
+.foot{text-align:center;color:#718078;font-size:10px;margin:20px 8px 0}
+button:disabled{opacity:.55}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header><div class="brand">✕ Xbox AutoPilot</div><span class="ver">SAFARI CHECK 1.0</span></header>
+<h1>Диагностика Safari</h1>
+<p class="sub">Проверка браузерных возможностей iPhone перед экспериментом с потоковым подключением Xbox.</p>
+<section class="card">
+ <div class="row"><span class="eyebrow">Результаты проверки</span><span class="pill" id="overall">ОЖИДАНИЕ</span></div>
+ <div class="metric"><span>Защищённый HTTPS-контекст</span><strong class="status" id="https">Не проверено</strong></div>
+ <div class="metric"><span>RTCPeerConnection</span><strong class="status" id="peer">Не проверено</strong></div>
+ <div class="metric"><span>RTCDataChannel</span><strong class="status" id="data">Не проверено</strong></div>
+ <div class="metric"><span>Локальный обмен WebRTC</span><strong class="status" id="loopback">Не запускался</strong></div>
+ <div class="metric"><span>MediaStream и видеоэлемент</span><strong class="status" id="video">Не проверено</strong></div>
+ <div class="metric"><span>Видеокодеки WebRTC</span><strong class="status" id="codecs">Не проверено</strong></div>
+ <div class="metric"><span>Режим установки</span><strong class="status" id="mode">Определяется</strong></div>
+ <button class="btn primary" id="run" type="button">Запустить диагностику</button>
+ <a class="btn secondary" href="./index.html">← Вернуться в AutoPilot</a>
+</section>
+<section class="card">
+ <div class="eyebrow" style="margin-bottom:10px">Сведения о браузере</div>
+ <div class="log" id="browser">Определяются возможности браузера…</div>
+</section>
+<section class="card">
+ <div class="eyebrow" style="margin-bottom:10px">Журнал теста</div>
+ <div class="log" id="log">Диагностика ещё не запускалась.</div>
+</section>
+<div class="notice">Этот тест создаёт только локальное WebRTC-соединение между двумя объектами браузера на этом iPhone. Он не подключается к Xbox, не отправляет команды на консоль, не запрашивает пароль Microsoft и не собирает токены.</div>
+<p class="tiny">Успешный локальный тест подтверждает базовые API Safari, но не гарантирует совместимость XRemote JS с Xbox-сервисами, сетевой авторизацией, ICE-настройками или видеопотоком консоли.</p>
+<p class="foot">Независимый проект · Не связан с Microsoft</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function status(id,text,state='unknown'){const el=$(id);el.textContent=text;el.className='status'+(state==='ok'?' ok':state==='bad'?' bad':'');}
+function waitIce(pc,timeout=7000){return new Promise(resolve=>{if(pc.iceGatheringState==='complete')return resolve();let done=false;const finish=()=>{if(done)return;done=true;pc.removeEventListener('icegatheringstatechange',check);resolve();};const check=()=>{if(pc.iceGatheringState==='complete')finish();};pc.addEventListener('icegatheringstatechange',check);setTimeout(finish,timeout);});}
+async function testDataChannel(){
+ const left=new RTCPeerConnection({iceServers:[]}),right=new RTCPeerConnection({iceServers:[]});
+ try{
+  const received=new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>reject(new Error('Истекло время ожидания сообщения')),10000);
+   right.addEventListener('datachannel',event=>{
+    event.channel.addEventListener('message',e=>{clearTimeout(timer);resolve(e.data);},{once:true});
+   },{once:true});
+  });
+  const channel=left.createDataChannel('safari-diagnostic',{ordered:true});
+  const opened=new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>reject(new Error('Канал не открылся за 10 секунд')),10000);
+   channel.addEventListener('open',()=>{clearTimeout(timer);resolve();},{once:true});
+  });
+  const offer=await left.createOffer();
+  await left.setLocalDescription(offer);
+  await waitIce(left);
+  await right.setRemoteDescription(left.localDescription);
+  const answer=await right.createAnswer();
+  await right.setLocalDescription(answer);
+  await waitIce(right);
+  await left.setRemoteDescription(right.localDescription);
+  await opened;
+  channel.send('xbox-autopilot-safari-ok');
+  const message=await received;
+  if(message!=='xbox-autopilot-safari-ok')throw new Error('Получено неожиданное сообщение');
+  return 'Сообщение отправлено и получено';
+ }finally{left.close();right.close();}
+}
+async function run(){
+ const button=$('run');button.disabled=true;$('overall').textContent='ПРОВЕРКА…';
+ const notes=[];
+ try{
+  const secure=window.isSecureContext===true;
+  status('https',secure?'Да':'Нет',secure?'ok':'bad');
+  notes.push('HTTPS-контекст: '+(secure?'да':'нет'));
+  const peer=typeof window.RTCPeerConnection==='function';
+  status('peer',peer?'Доступен':'Недоступен',peer?'ok':'bad');
+  const data=peer&&'createDataChannel' in RTCPeerConnection.prototype;
+  status('data',data?'API доступен':'API недоступен',data?'ok':'bad');
+  const stream=typeof window.MediaStream==='function';
+  const video=typeof document.createElement('video').srcObject!=='undefined';
+  status('video',stream&&video?'MediaStream и video.srcObject доступны':'Не все API доступны',stream&&video?'ok':'bad');
+  let codecText='Не удалось получить список';
+  try{
+   const codecs=window.RTCRtpReceiver&&RTCRtpReceiver.getCapabilities?RTCRtpReceiver.getCapabilities('video'):null;
+   if(codecs&&codecs.codecs){const names=[...new Set(codecs.codecs.map(c=>c.mimeType))];codecText=names.length?names.join(', '):'Список пуст';}
+  }catch(e){codecText='Ошибка чтения: '+e.message;}
+  status('codecs',codecText,codecText==='Список пуст'||codecText.startsWith('Ошибка')?'unknown':'ok');
+  const standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
+  status('mode',standalone||navigator.standalone?'Установленное веб-приложение':'Обычная вкладка Safari','ok');
+  notes.push('Браузер: '+navigator.userAgent);
+  notes.push('Платформа: '+(navigator.platform||'не сообщается')+'; касаний: '+(navigator.maxTouchPoints||0));
+  $('browser').textContent=notes.join('\n');
+  if(peer&&data){
+   status('loopback','Выполняется…');
+   const result=await testDataChannel();
+   status('loopback',result,'ok');
+  }else{
+   status('loopback','Пропущено: нет нужных API','bad');
+  }
+  const passed=[secure,peer,data,stream,video,$('loopback').classList.contains('ok')].filter(Boolean).length;
+  $('overall').textContent=passed+' / 6 проверок';
+  $('log').textContent='Диагностика завершена.\n'+notes.join('\n')+'\nВидеокодеки: '+codecText+'\nЛокальный WebRTC: '+$('loopback').textContent+'\n\nВажно: это не тест подключения к Xbox.';
+ }catch(error){
+  status('loopback','Ошибка: '+error.message,'bad');
+  $('overall').textContent='ЕСТЬ ОШИБКА';
+  $('log').textContent='Ошибка диагностики: '+(error&&error.message?error.message:String(error))+'\nПопробуй ещё раз в обычной вкладке Safari.';
+ }finally{button.disabled=false;}
+}
+$('run').addEventListener('click',run);
+status('mode',window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches?'Установленное веб-приложение':'Обычная вкладка Safari','ok');
+</script>
+</body>
+</html>
