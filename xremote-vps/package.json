@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --check server.js && node --check worker.js"
   },
   "dependencies": {
     "@yowari/xremote": "0.1.4",
@@ -16,5 +16,7 @@
   "devDependencies": {
     "vite": "^6.1.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
