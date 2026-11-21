@@ -22,7 +22,7 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.preset{border:1px solid var(--line);background:#111a15;border-radius:15px;color:var(--white);padding:13px 12px;text-align:left;min-height:106px;cursor:pointer}.preset.active{border-color:var(--green2);background:linear-gradient(145deg,#1b3523,#121b15)}.preset .ico{font-size:21px;margin-bottom:8px}.preset b,.preset small{display:block}.preset b{font-size:13px}.preset small{color:var(--muted);font-size:10px;margin-top:4px}.tag{display:inline-block;background:#20362a;border:0;padding:3px 7px;font-weight:850;margin-top:8px}
 .steps{list-style:none;padding:0;margin:12px 0}.steps li{border-top:1px solid #26342a;padding:9px 0;font-size:11px;color:#d5dfd7;display:flex;gap:9px}.n{width:21px;height:21px;display:grid;place-items:center;background:#203529;color:var(--green);border-radius:7px;flex:none;font-size:10px}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action{border:0;border-radius:12px;padding:13px 8px;font-size:12px;font-weight:850;cursor:pointer}.go{background:linear-gradient(135deg,#9af0a6,#39b85b);color:#07120a}.stop{background:#242d27;color:#e7eee8;border:1px solid #3a473d}.action:disabled{opacity:.45;cursor:not-allowed}
-.log{font-size:11px;color:var(--muted);min-height:28px}.foot{text-align:center;color:#718078;font-size:10px;margin:20px 8px 0}.tiny{font-size:10px;color:var(--muted);line-height:1.5}.metric{padding:11px 0;border-top:1px solid #26342a;font-size:12px}.metric:first-of-type{border-top:0}.metric strong{font-size:11px;text-align:right}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:6px}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.log{font-size:11px;color:var(--muted);min-height:28px}.foot{text-align:center;color:#718078;font-size:10px;margin:20px 8px 0}.tiny{font-size:10px;color:var(--muted);line-height:1.5}.field{display:block;width:100%;margin-top:7px;padding:12px;border:1px solid #3a473d;border-radius:11px;background:#0b120d;color:var(--white);font:inherit;font-size:12px}.fieldrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stepitem{padding:8px 10px;border-top:1px solid #26342a;font-size:11px;display:flex;justify-content:space-between;gap:8px}.stepitem button{background:#34201e;color:#ffc0b8;border:0;border-radius:7px;padding:4px 8px}.metric{padding:11px 0;border-top:1px solid #26342a;font-size:12px}.metric:first-of-type{border-top:0}.metric strong{font-size:11px;text-align:right}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:6px}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
 @media(max-width:360px){h1{font-size:25px}.wrap{padding-left:12px;padding-right:12px}}
 </style>
 </head>
@@ -48,6 +48,40 @@ h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-
 <button class="btn secondary" id="confirmRemotePlay" type="button">✓ Я вижу изображение Xbox</button>
 <button class="btn secondary" id="resetRemotePlay" type="button" style="display:none">Сбросить подтверждение</button>
 <p class="tiny" id="remoteHelp">Пока нет подтверждения от пользователя.</p>
+</section>
+<div class="section"><h2>Автоматическое управление</h2><span>XREMOTE VPS</span></div>
+<section class="card" id="automation">
+  <div class="row"><span class="eyebrow">Сервер управления</span><span class="pill" id="apiState">НЕ ПОДКЛЮЧЁН</span></div>
+  <label class="tiny" for="apiUrl">HTTPS-адрес твоего VPS</label>
+  <input class="field" id="apiUrl" type="url" placeholder="https://xbox.example.com" autocomplete="url">
+  <label class="tiny" for="apiKey">API_KEY из файла .env на VPS</label>
+  <input class="field" id="apiKey" type="password" placeholder="Вставь API_KEY" autocomplete="off">
+  <div class="actions">
+    <button class="action go" id="connectXbox">Подключить Xbox</button>
+    <button class="action stop" id="refreshXbox">Статус</button>
+  </div>
+  <p class="tiny" id="apiHelp">Сервер XRemote должен быть запущен и иметь настроенный XREMOTE_OAUTH_TOKEN. Не вставляй OAuth-токен Microsoft сюда — он хранится только на сервере.</p>
+  <div style="height:1px;background:#26342a;margin:14px 0"></div>
+  <div class="eyebrow">Конструктор сценария</div>
+  <div class="fieldrow">
+    <div><label class="tiny" for="buttonName">Кнопка Xbox</label>
+      <select class="field" id="buttonName">
+        <option>Nexus</option><option>Menu</option><option>View</option><option>DpadUp</option><option>DpadDown</option><option>DpadLeft</option><option>DpadRight</option><option>A</option><option>B</option><option>X</option><option>Y</option><option>LeftShoulder</option><option>RightShoulder</option><option>LeftThumb</option><option>RightThumb</option>
+      </select>
+    </div>
+    <div><label class="tiny" for="holdMs">Удержание (мс)</label><input class="field" id="holdMs" type="number" min="40" max="2000" value="140"></div>
+  </div>
+  <label class="tiny" for="waitMs">Пауза после нажатия (мс)</label>
+  <input class="field" id="waitMs" type="number" min="0" max="10000" step="50" value="350">
+  <button class="btn secondary" id="addStep" type="button">＋ Добавить нажатие</button>
+  <div id="scriptSteps" style="margin-top:10px"><p class="tiny">Сценарий пока пуст. Добавь последовательность кнопок.</p></div>
+  <div class="actions">
+    <button class="action go" id="runScenario">▶ Выполнить</button>
+    <button class="action stop" id="stopScenario">■ Остановить</button>
+  </div>
+  <button class="btn secondary" id="testButtons" type="button">Тест: вправо и влево</button>
+  <p class="tiny" id="runHelp">Сценарий выполняется на сервере через XRemote. Для остановки нажми «Остановить». Кнопки A/B могут подтверждать действия в интерфейсе Xbox — используй их только когда понимаешь текущий экран.</p>
+  <div class="log" id="automationLog" aria-live="polite">Ожидание подключения.</div>
 </section>
 <div class="section"><h2>Установка на iPhone</h2><span>PWA</span></div>
 <section class="card"><p class="tiny">Чтобы добавить AutoPilot на главный экран, открой страницу в Safari, нажми «Поделиться», затем «На экран Домой» и подтверди добавление.</p><p class="tiny">Для полноценной установки PWA сайт должен быть размещён на HTTPS-хостинге. Открытие HTML-файла напрямую не включает Service Worker.</p></section>
@@ -150,5 +184,72 @@ document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>c
 $('nextStep').onclick=()=>{if(stepIndex>=data[selected].steps.length)return;stepIndex++;renderSteps();$('log').textContent=stepIndex>=data[selected].steps.length?'Сценарий завершён: '+data[selected].name:'Отмечен шаг '+stepIndex+': '+data[selected].name;};
 $('resetSteps').onclick=()=>{stepIndex=0;renderSteps();$('log').textContent='Прогресс сценария сброшен.';};
 renderSteps();
+
+// XRemote VPS automation bridge. The Xbox OAuth token stays on the server.
+const automationSteps = [];
+const apiUrlEl = $('apiUrl'), apiKeyEl = $('apiKey');
+apiUrlEl.value = localStorage.getItem('xremoteApiUrl') || '';
+apiKeyEl.value = sessionStorage.getItem('xremoteApiKey') || '';
+apiUrlEl.addEventListener('change', () => localStorage.setItem('xremoteApiUrl', apiUrlEl.value.trim()));
+apiKeyEl.addEventListener('change', () => sessionStorage.setItem('xremoteApiKey', apiKeyEl.value.trim()));
+function apiBase() {
+  const value = apiUrlEl.value.trim().replace(/\/$/, '');
+  if (!/^https:\/\//i.test(value)) throw new Error('Укажи HTTPS-адрес VPS');
+  if (!apiKeyEl.value.trim()) throw new Error('Укажи API_KEY');
+  return value;
+}
+async function apiRequest(path, method='GET', body) {
+  const headers = { Authorization:'Bearer '+apiKeyEl.value.trim() };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const response = await fetch(apiBase()+path, { method, headers, body:body===undefined?undefined:JSON.stringify(body) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || ('HTTP '+response.status));
+  return data;
+}
+function automationLog(message) { $('automationLog').textContent = new Date().toLocaleTimeString('ru-RU')+' · '+message; }
+function renderAutomationSteps() {
+  $('scriptSteps').innerHTML = automationSteps.length
+    ? automationSteps.map((step,i)=>'<div class="stepitem"><span>'+(i+1)+'. '+step.button+' · '+step.holdMs+' мс · пауза '+step.waitMs+' мс</span><button type="button" data-remove="'+i+'" aria-label="Удалить шаг">×</button></div>').join('')
+    : '<p class="tiny">Сценарий пока пуст. Добавь последовательность кнопок.</p>';
+  $('scriptSteps').querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => {
+    automationSteps.splice(Number(button.dataset.remove),1); renderAutomationSteps();
+  }));
+}
+$('addStep').addEventListener('click', () => {
+  const holdMs = Number($('holdMs').value), waitMs = Number($('waitMs').value);
+  if (!Number.isInteger(holdMs) || holdMs<40 || holdMs>2000 || !Number.isInteger(waitMs) || waitMs<0 || waitMs>10000) {
+    automationLog('Проверь длительность нажатия и паузы.'); return;
+  }
+  if (automationSteps.length>=80) { automationLog('Максимум 80 шагов.'); return; }
+  automationSteps.push({button:$('buttonName').value,holdMs,waitMs}); renderAutomationSteps();
+});
+$('connectXbox').addEventListener('click', async () => {
+  $('connectXbox').disabled=true;
+  try { const result=await apiRequest('/api/connect','POST',{}); $('apiState').textContent='XBOX ПОДКЛЮЧЁН'; automationLog('XRemote подключён: '+(result.result?.consoleName||'Xbox')); }
+  catch(e) { $('apiState').textContent='ОШИБКА'; automationLog(e.message); }
+  finally { $('connectXbox').disabled=false; }
+});
+$('refreshXbox').addEventListener('click', async () => {
+  try { const result=await apiRequest('/api/status'); $('apiState').textContent=result.xboxConnected?'XBOX ПОДКЛЮЧЁН':(result.workerReady?'СЕРВЕР ГОТОВ':'СЕРВЕР НЕДОСТУПЕН'); automationLog(result.lastEvent||'Статус обновлён'); }
+  catch(e) { $('apiState').textContent='НЕТ СВЯЗИ'; automationLog(e.message); }
+});
+$('runScenario').addEventListener('click', async () => {
+  if (!automationSteps.length) { automationLog('Сначала добавь хотя бы одно нажатие.'); return; }
+  $('runScenario').disabled=true;
+  try {
+    const result=await apiRequest('/api/run-scenario','POST',{steps:automationSteps});
+    automationLog('Готово: отправлено нажатий — '+(result.result?.count||0)+'.');
+  } catch(e) { automationLog(e.message); }
+  finally { $('runScenario').disabled=false; }
+});
+$('stopScenario').addEventListener('click', async () => {
+  try { await apiRequest('/api/stop-scenario','POST',{}); automationLog('Команда остановки отправлена.'); }
+  catch(e) { automationLog(e.message); }
+});
+$('testButtons').addEventListener('click', async () => {
+  try { const result=await apiRequest('/api/test-presses','POST',{}); automationLog('Тестовые кнопки отправлены: '+(result.result?.sent||[]).join(', ')); }
+  catch(e) { automationLog(e.message); }
+});
+renderAutomationSteps();
 </script>
 </body></html>
