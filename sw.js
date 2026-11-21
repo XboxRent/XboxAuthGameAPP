@@ -1,4 +1,4 @@
-const C='xbox-autopilot-3-6',F=['./','./index.html','./manifest.webmanifest','./icon.svg','./xremote-test.html'];
+const C='xbox-autopilot-4-0',F=['./','./index.html','./manifest.webmanifest','./icon.svg','./xremote-test.html'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
-self.addEventListener('fetch',e=>{if(new URL(e.request.url).origin!==self.location.origin)return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request))) });
+self.addEventListener('fetch',e=>{if(new URL(e.request.url).origin!==self.location.origin)return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request)))});
