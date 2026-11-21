@@ -1,0 +1,12 @@
+{
+  "id": "./",
+  "name": "Xbox AutoPilot",
+  "short_name": "AutoPilot",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080d0a",
+  "theme_color": "#080d0a",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
