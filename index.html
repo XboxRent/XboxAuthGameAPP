@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d0a">
+<meta name="description" content="Xbox AutoPilot — панель диагностики и помощник Xbox Remote Play">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Xbox AutoPilot 3.2</title>
+<style>
+:root{color-scheme:dark;--bg:#080d0a;--panel:#121a15;--line:#2b3a2e;--green:#7ce394;--green2:#39b85b;--muted:#a0afa4;--white:#f4f8f4;--amber:#e8c36b;--red:#ef8b83}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1c3b27,transparent 48%),var(--bg);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:580px;margin:auto;padding:20px 16px calc(34px + env(safe-area-inset-bottom))}
+header,.row,.section,.metric,.device{display:flex;align-items:center;justify-content:space-between;gap:12px}header{margin-bottom:26px}.brand{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:850}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#a4f3ad,#26994a);display:grid;place-items:center;color:#07120a;font-size:22px;font-weight:950}.ver,.pill,.tag{font-size:10px;color:var(--green);border:1px solid #31533b;padding:5px 9px;border-radius:20px}
+h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0 0 7px}.sub{font-size:13px;color:var(--muted);margin:0 0 20px}
+.card{background:linear-gradient(145deg,#151f18,#101611);border:1px solid var(--line);border-radius:18px;padding:16px;margin:13px 0}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);font-weight:850}
+.device{justify-content:flex-start;margin-top:12px}.deviceicon{width:43px;height:43px;border-radius:13px;background:#203529;display:grid;place-items:center;font-size:21px}.device small{display:block;color:var(--muted);font-size:11px}.status{font-size:11px;font-weight:800;color:var(--amber);text-align:right}.status.ok{color:var(--green)}.status.bad{color:var(--red)}
+.notice{padding:11px;border:1px solid #5c4a27;background:#282213;border-radius:11px;color:#e8d49c;font-size:11px;margin-top:13px}
+.btn{display:block;width:100%;text-decoration:none;text-align:center;border:0;border-radius:13px;padding:14px 12px;font-size:13px;font-weight:850;margin-top:13px;cursor:pointer}.primary{background:linear-gradient(135deg,#9af0a6,#39b85b);color:#07120a}.secondary{background:#242d27;color:#e7eee8;border:1px solid #3a473d}
+.section{margin:23px 2px 10px;align-items:end}.section h2{font-size:17px;margin:0}.section span{font-size:10px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.preset{border:1px solid var(--line);background:#111a15;border-radius:15px;color:var(--white);padding:13px 12px;text-align:left;min-height:106px;cursor:pointer}.preset.active{border-color:var(--green2);background:linear-gradient(145deg,#1b3523,#121b15)}.preset .ico{font-size:21px;margin-bottom:8px}.preset b,.preset small{display:block}.preset b{font-size:13px}.preset small{color:var(--muted);font-size:10px;margin-top:4px}.tag{display:inline-block;background:#20362a;border:0;padding:3px 7px;font-weight:850;margin-top:8px}
+.steps{list-style:none;padding:0;margin:12px 0}.steps li{border-top:1px solid #26342a;padding:9px 0;font-size:11px;color:#d5dfd7;display:flex;gap:9px}.n{width:21px;height:21px;display:grid;place-items:center;background:#203529;color:var(--green);border-radius:7px;flex:none;font-size:10px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action{border:0;border-radius:12px;padding:13px 8px;font-size:12px;font-weight:850;cursor:pointer}.go{background:linear-gradient(135deg,#9af0a6,#39b85b);color:#07120a}.stop{background:#242d27;color:#e7eee8;border:1px solid #3a473d}.action:disabled{opacity:.45;cursor:not-allowed}
+.log{font-size:11px;color:var(--muted);min-height:28px}.foot{text-align:center;color:#718078;font-size:10px;margin:20px 8px 0}.tiny{font-size:10px;color:var(--muted);line-height:1.5}.metric{padding:11px 0;border-top:1px solid #26342a;font-size:12px}.metric:first-of-type{border-top:0}.metric strong{font-size:11px;text-align:right}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:6px}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+@media(max-width:360px){h1{font-size:25px}.wrap{padding-left:12px;padding-right:12px}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div class="brand"><div class="logo">X</div>Xbox AutoPilot</div><div class="ver">3.2 · AUTO CHECK</div></header>
+<h1>Диагностика Xbox</h1><p class="sub">Автоматическая проверка сети и честный статус Remote Play</p>
+<section class="card">
+<div class="row"><span class="eyebrow">Состояние системы</span><span class="pill" id="overall">ПРОВЕРКА…</span></div>
+<div class="metric"><span><i class="dot" id="internetDot"></i>Интернет на iPhone</span><strong class="status" id="internetStatus">Проверка…</strong></div>
+<div class="metric"><span><i class="dot" id="siteDot"></i>Сервис проверки</span><strong class="status" id="siteStatus">Проверка…</strong></div>
+<div class="metric"><span><i class="dot" id="xboxDot"></i>Xbox в локальной сети</span><strong class="status" id="xboxStatus">Не проверяется браузером</strong></div>
+<div class="metric"><span><i class="dot" id="remoteDot"></i>Сеанс Remote Play</span><strong class="status" id="remoteStatus">Нет сигнала</strong></div>
+<p class="tiny" id="checkedAt">Автоматическая проверка запускается…</p>
+<button class="btn secondary" id="checkNow" type="button">↻ Проверить сейчас</button>
+<div class="notice">Ограничение iPhone: Safari не может читать состояние другой вкладки Remote Play или сканировать локальную сеть как системное приложение. Статус Xbox и активного сеанса не будет выдаваться за подтверждённый без официального сигнала.</div>
+</section>
+<section class="card">
+<div class="row"><span class="eyebrow">Твоя консоль</span><span class="pill">SERIES X</span></div>
+<div class="device"><div class="deviceicon">▣</div><div style="flex:1"><b>Xbox Series X</b><small>Официальный Remote Play</small></div><span class="status" id="connectionStatus">СТАТУС НЕИЗВЕСТЕН</span></div>
+<a class="btn primary" href="https://www.xbox.com/remoteplay" target="_blank" rel="noopener noreferrer">Открыть Xbox Remote Play ↗</a>
+<p class="tiny">После запуска Remote Play вернись в AutoPilot. Браузер не может автоматически подтвердить, что в другой вкладке началась трансляция.</p>
+</section>
+<div class="section"><h2>Установка на iPhone</h2><span>PWA</span></div>
+<section class="card"><p class="tiny">Чтобы добавить AutoPilot на главный экран, открой страницу в Safari, нажми «Поделиться», затем «На экран Домой» и подтверди добавление.</p><p class="tiny">Для полноценной установки PWA сайт должен быть размещён на HTTPS-хостинге. Открытие HTML-файла напрямую не включает Service Worker.</p></section>
+<div class="section"><h2>Сценарии AutoPilot</h2><span>ПЛАНИРОВЩИК</span></div>
+<div class="grid" id="presets">
+<button class="preset active" data-id="home"><div class="ico">⌂</div><b>Главный экран</b><small>План перехода на домашнюю панель</small><span class="tag">БАЗОВЫЙ</span></button>
+<button class="preset" data-id="store"><div class="ico">▤</div><b>Microsoft Store</b><small>План открытия магазина</small><span class="tag">МЕНЮ</span></button>
+<button class="preset" data-id="library"><div class="ico">▦</div><b>Библиотека</b><small>План открытия библиотеки</small><span class="tag">МЕНЮ</span></button>
+<button class="preset" data-id="settings"><div class="ico">⚙</div><b>Настройки</b><small>План перехода к настройкам</small><span class="tag">СИСТЕМА</span></button>
+</div>
+<section class="card">
+<div class="row"><span class="eyebrow">Выбранный сценарий</span><span class="ver" id="state">ГОТОВ</span></div>
+<h3 id="name" style="margin:12px 0 4px;font-size:15px">Главный экран</h3><div id="desc" style="color:var(--muted);font-size:11px">План последовательности действий</div>
+<ol class="steps" id="steps"><li><span class="n">1</span>Открыть Remote Play</li><li><span class="n">2</span>Выполнить переход в интерфейсе Xbox</li><li><span class="n">3</span>Вернуться сюда для отметки выполнения</li></ol>
+<div class="actions"><button class="action go" id="start">▶ Запустить демо</button><button class="action stop" id="stop" disabled>■ Стоп</button></div>
+<p class="tiny">Демо показывает план шагов. Оно не нажимает кнопки на консоли.</p>
+</section>
+<section class="card"><div class="eyebrow" style="margin-bottom:10px">Журнал состояния</div><div class="log" id="log">Автоматическая диагностика запущена.</div></section>
+<p class="foot">Независимый проект · Не связан с Microsoft · Не запрашивает и не хранит пароль Microsoft</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function paint(dotId,statusId,state,text){const dot=$(dotId),label=$(statusId);dot.className='dot'+(state==='ok'?' ok':state==='bad'?' bad':'');label.textContent=text;label.className='status'+(state==='ok'?' ok':state==='bad'?' bad':'');}
+let checkInProgress=false;
+async function probeInternet(){
+ if(!navigator.onLine){paint('internetDot','internetStatus','bad','Нет сети');return false;}
+ const controller=new AbortController();let timeoutId;
+ try{const request=fetch('https://connectivitycheck.gstatic.com/generate_204?ts='+Date.now(),{method:'GET',mode:'no-cors',cache:'no-store',signal:controller.signal});const timeout=new Promise((_,reject)=>{timeoutId=setTimeout(()=>{controller.abort();reject(new Error('timeout'));},4500);});await Promise.race([request,timeout]);paint('internetDot','internetStatus','ok','Сеть отвечает');return true;}
+ catch(e){paint('internetDot','internetStatus','bad','Нет ответа');return false;}finally{if(timeoutId)clearTimeout(timeoutId);}
+}
+async function runDiagnostics(){
+ if(checkInProgress)return;checkInProgress=true;$('overall').textContent='ПРОВЕРКА…';$('checkedAt').textContent='Проверяем интернет-соединение…';
+ try{const online=await probeInternet();paint('siteDot','siteStatus','ok','Страница работает');paint('xboxDot','xboxStatus','unknown','Safari не может проверить');paint('remoteDot','remoteStatus','unknown','Нет сигнала от Xbox');$('connectionStatus').textContent='СТАТУС НЕИЗВЕСТЕН';$('overall').textContent=online?'СЕТЬ ДОСТУПНА':'НЕТ ПОДТВЕРЖДЕНИЯ СЕТИ';$('checkedAt').textContent='Последняя проверка: '+new Date().toLocaleTimeString('ru-RU')+' · Автопроверка каждые 30 секунд';$('log').textContent=online?'Интернет отвечает. Состояние Xbox и Remote Play из Safari определить нельзя.':'Не удалось подтвердить интернет. Возможно, сеть ограничивает проверочный запрос.';}
+ catch(e){$('overall').textContent='ПРОВЕРКА НЕ УДАЛАСЬ';$('checkedAt').textContent='Проверка завершилась с ошибкой. Попробуй ещё раз.';$('log').textContent='Ошибка диагностики.';}finally{checkInProgress=false;}
+}
+$('checkNow').addEventListener('click',runDiagnostics);window.addEventListener('online',runDiagnostics);window.addEventListener('offline',()=>{paint('internetDot','internetStatus','bad','Нет сети');$('overall').textContent='НЕТ СЕТИ';});runDiagnostics();setInterval(runDiagnostics,30000);
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+const data={
+home:{name:'Главный экран',desc:'План перехода на домашнюю панель',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox перейти на главный экран','Отметить выполнение здесь']},
+store:{name:'Microsoft Store',desc:'План открытия магазина',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox выбрать Microsoft Store','Отметить выполнение здесь']},
+library:{name:'Библиотека',desc:'План открытия библиотеки',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox открыть библиотеку','Отметить выполнение здесь']},
+settings:{name:'Настройки',desc:'План перехода к системным настройкам',steps:['Открыть Xbox Remote Play','В интерфейсе Xbox открыть настройки','Отметить выполнение здесь']}
+};
+let selected='home',timer=null,i=0;
+function choose(id){if(timer)return;selected=id;document.querySelectorAll('.preset').forEach(x=>x.classList.toggle('active',x.dataset.id===id));$('name').textContent=data[id].name;$('desc').textContent=data[id].desc;$('steps').innerHTML=data[id].steps.map((s,j)=>'<li><span class="n">'+(j+1)+'</span>'+s+'</li>').join('');$('state').textContent='ГОТОВ';$('log').textContent='Выбран сценарий: '+data[id].name;}
+document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.id)));
+$('start').onclick=()=>{if(timer)return;i=0;$('start').disabled=true;$('stop').disabled=false;$('state').textContent='ДЕМО';$('log').textContent='Демонстрация шагов запущена.';const run=()=>{if(i>=data[selected].steps.length){clearInterval(timer);timer=null;$('start').disabled=false;$('stop').disabled=true;$('state').textContent='ГОТОВ';$('log').textContent='Демо завершено. Команды на Xbox не отправлялись.';return;}$('log').textContent='Шаг '+(i+1)+': '+data[selected].steps[i];i++;};run();timer=setInterval(run,1400);};
+$('stop').onclick=()=>{if(timer)clearInterval(timer);timer=null;$('start').disabled=false;$('stop').disabled=true;$('state').textContent='ОСТАНОВЛЕНО';$('log').textContent='Демо остановлено.';};
+</script>
+</body></html>
