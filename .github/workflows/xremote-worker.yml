@@ -1,0 +1,21 @@
+name: XRemote VPS worker
+on:
+  push:
+    branches: [main, feature/xremote-vps-worker]
+    paths: ['xremote-vps/**', '.github/workflows/xremote-worker.yml']
+  pull_request:
+    paths: ['xremote-vps/**', '.github/workflows/xremote-worker.yml']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: xremote-vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
